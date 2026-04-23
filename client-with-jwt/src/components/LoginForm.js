@@ -10,20 +10,38 @@ function LoginForm({ onLogin }) {
   function handleSubmit(e) {
     e.preventDefault();
     setIsLoading(true);
+    setErrors([]);
+
     fetch("/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ username, password }),
-    }).then((r) => {
-      setIsLoading(false);
-      if (r.ok) {
-        r.json().then(({token, user}) => onLogin(token, user));
-      } else {
-        r.json().then((err) => setErrors(err.errors));
-      }
-    });
+    })
+      .then((r) => {
+        setIsLoading(false);
+
+        if (r.ok) {
+          r.json().then((data) => {
+            console.log("LOGIN RESPONSE:", data); // debug
+
+            if (data.access_token) {
+              onLogin(data.access_token, data.user); // FIXED
+            } else {
+              setErrors(["Login failed: No token returned"]);
+            }
+          });
+        } else {
+          r.json().then((err) => {
+            setErrors(err.errors || ["Login failed"]);
+          });
+        }
+      })
+      .catch(() => {
+        setIsLoading(false);
+        setErrors(["Network error"]);
+      });
   }
 
   return (
@@ -38,6 +56,7 @@ function LoginForm({ onLogin }) {
           onChange={(e) => setUsername(e.target.value)}
         />
       </FormField>
+
       <FormField>
         <Label htmlFor="password">Password</Label>
         <Input
@@ -48,14 +67,16 @@ function LoginForm({ onLogin }) {
           onChange={(e) => setPassword(e.target.value)}
         />
       </FormField>
+
       <FormField>
-        <Button variant="fill" color="primary" type="submit">
+        <Button type="submit">
           {isLoading ? "Loading..." : "Login"}
         </Button>
       </FormField>
+
       <FormField>
-        {errors.map((err) => (
-          <Error key={err}>{err}</Error>
+        {errors.map((err, index) => (
+          <Error key={index}>{err}</Error>
         ))}
       </FormField>
     </form>

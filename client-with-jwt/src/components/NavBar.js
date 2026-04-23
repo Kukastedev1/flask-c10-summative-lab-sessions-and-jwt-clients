@@ -3,10 +3,18 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../styles";
 
-function NavBar({ setUser }) {
+function NavBar({ setUser, onDoSomething }) {
   function handleLogoutClick() {
     localStorage.removeItem("token");
     setUser(null);
+  }
+
+  function handleDoSomethingClick() {
+    if (onDoSomething) {
+      onDoSomething();
+    } else {
+      console.warn("onDoSomething not provided");
+    }
   }
 
   return (
@@ -14,10 +22,12 @@ function NavBar({ setUser }) {
       <Logo>
         <Link to="/">My App</Link>
       </Logo>
+
       <Nav>
-        <Button>
+        <Button onClick={handleDoSomethingClick}>
           Do Something
         </Button>
+
         <Button variant="outline" onClick={handleLogoutClick}>
           Logout
         </Button>
@@ -31,6 +41,7 @@ const Wrapper = styled.header`
   justify-content: center;
   align-items: center;
   padding: 8px;
+  position: relative;
 `;
 
 const Logo = styled.h1`
@@ -48,9 +59,9 @@ const Logo = styled.h1`
 
 const Nav = styled.nav`
   display: flex;
-  gap: 4px;
+  gap: 8px;
   position: absolute;
-  right: 8px;
+  right: 12px;
 `;
 
 export default NavBar;

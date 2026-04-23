@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Error, Input, FormField, Label, Textarea } from "../styles";
+import { Button, Error, Input, FormField, Label } from "../styles";
 
 function SignUpForm({ onLogin }) {
   const [username, setUsername] = useState("");
@@ -12,6 +12,7 @@ function SignUpForm({ onLogin }) {
     e.preventDefault();
     setErrors([]);
     setIsLoading(true);
+
     fetch("/signup", {
       method: "POST",
       headers: {
@@ -20,14 +21,29 @@ function SignUpForm({ onLogin }) {
       body: JSON.stringify({
         username,
         password,
-        password_confirmation: passwordConfirmation
+        password_confirmation: passwordConfirmation,
       }),
     }).then((r) => {
       setIsLoading(false);
+
       if (r.ok) {
-        r.json().then(({token, user}) => onLogin(token, user));
+        r.json().then((data) => {
+          console.log("SIGNUP RESPONSE:", data); // debug
+
+          const token = data.access_token; //  FIX
+          const user = data.user || null;
+
+          if (!token) {
+            setErrors(["No token returned from server"]);
+            return;
+          }
+
+          onLogin(token, user);
+        });
       } else {
-        r.json().then((err) => setErrors(err.errors));
+        r.json().then((err) =>
+          setErrors(err.errors || [err.error || "Signup failed"])
+        );
       }
     });
   }
@@ -44,6 +60,7 @@ function SignUpForm({ onLogin }) {
           onChange={(e) => setUsername(e.target.value)}
         />
       </FormField>
+
       <FormField>
         <Label htmlFor="password">Password</Label>
         <Input
@@ -54,8 +71,9 @@ function SignUpForm({ onLogin }) {
           autoComplete="current-password"
         />
       </FormField>
+
       <FormField>
-        <Label htmlFor="password">Password Confirmation</Label>
+        <Label htmlFor="password_confirmation">Password Confirmation</Label>
         <Input
           type="password"
           id="password_confirmation"
@@ -64,12 +82,16 @@ function SignUpForm({ onLogin }) {
           autoComplete="current-password"
         />
       </FormField>
+
       <FormField>
-        <Button type="submit">{isLoading ? "Loading..." : "Sign Up"}</Button>
+        <Button type="submit">
+          {isLoading ? "Loading..." : "Sign Up"}
+        </Button>
       </FormField>
+
       <FormField>
-        {errors.map((err) => (
-          <Error key={err}>{err}</Error>
+        {errors.map((err, index) => (
+          <Error key={index}>{err}</Error>
         ))}
       </FormField>
     </form>
